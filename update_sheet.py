@@ -20,22 +20,26 @@ http_auth = credentials.authorize(httplib2.Http())
 # Open Google Sheet
 gc = gspread.authorize(credentials)
 sheet = gc.open("OOSTT Sheet Test").sheet1
-sheet.resize(1)
-heading = ["Class","Definition","User-Centered Description"]
-sheet.append_row(heading)
+
+# only uncomment next 3 lines if creating new sheet:
+# sheet.resize(1) 
+# heading = ["Class","Definition","User-Centered Description"]
+# sheet.append_row(heading)
 
 # Load OOSTT Ontology
 g = Graph()
 g.parse('https://raw.githubusercontent.com/OOSTT/OOSTT/master/oostt.owl', format='xml')
 
-cdd = g.query(
+# SPARQL query to determine what goes into sheet
+for row in g.query(
     """PREFIX obo: <http://purl.obolibrary.org/obo/>
-        SELECT DISTINCT ?label ?definition ?description
+        SELECT ?term ?definition ?description
         WHERE {
-          ?class rdfs:label ?label.
-          ?class obo:IAO_0000115 ?definition.
-          ?class obo:OOSTT_00000030 ?description
-        }""")
-
-for row in cdd:
+          ?class rdf:type owl:Class .
+          ?class rdfs:label ?term .
+          OPTIONAL {?class obo:IAO_0000115 ?definition .}
+          OPTIONAL {?class obo:OOSTT_00000030 ?description .}
+        }
+        ORDER BY ?term
+        """):
     sheet.append_row(row)
