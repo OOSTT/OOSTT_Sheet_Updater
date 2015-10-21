@@ -21,17 +21,18 @@ http_auth = credentials.authorize(httplib2.Http())
 gc = gspread.authorize(credentials)
 sheet = gc.open("OOSTT Sheet Test").sheet1
 
-# only uncomment next 3 lines if creating new sheet:
+# SPARQL node : column heading
+nodes = {
+    'term' : 'Term',
+    'genus' : 'Definition (genus differentia)',
+    'userdef' : 'rdfs:comment (user-centered definitions)'
+}
+
+# Only uncomment next 2 lines if creating new sheet:
 # sheet.resize(1)
-# heading = ["Term","Definition (genus differentia)","rdfs:comment(user-centered definitions)"]
-# sheet.append_row(heading)
+# sheet.append_row(nodes.values())
 
-# Find out which column in sheet to place term & definitions
 sheet_row = sheet.row_count  # number rows before writing to sheet
-term = sheet.find("Term")
-genus = sheet.find("Definition (genus differentia)")
-userdef = sheet.find("rdfs:comment (user-centered definitions)")
-
 # Load OOSTT Ontology
 g = Graph()
 g.parse('https://raw.githubusercontent.com/OOSTT/OOSTT/master/oostt.owl', format='xml')
@@ -49,6 +50,5 @@ for row in g.query(
        """):
    sheet_row += 1
    sheet.add_rows(1)
-   sheet.update_cell(sheet_row, term.col, row['term'])
-   sheet.update_cell(sheet_row, genus.col, row['genus'])
-   sheet.update_cell(sheet_row, userdef.col, row['userdef'])
+   for node in nodes:
+       sheet.update_cell(sheet_row, sheet.find(nodes[node]).col, row[node])
